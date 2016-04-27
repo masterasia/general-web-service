@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+    <!-- 引入属性文件 -->
+    <context:property-placeholder location="classpath:jdbc.properties" />
+    <bean id="statFilter" class="com.alibaba.druid.filter.stat.StatFilter">
+        <property name="mergeSql" value="true" />
+        <property name="logSlowSql" value="true" />
+        <property name="slowSqlMillis" value="10000" />
+    </bean>
+
+    <!-- 配置MYSQL数据源 -->
+    <bean name="mainDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="DriverClassName" value="${jdbc.mysql.driver}" />
+        <property name="url" value="${jdbc.mysql.url}" />
+        <property name="username" value="${jdbc.mysql.username}" />
+        <property name="password" value="${jdbc.mysql.password}" />
+        <!-- 初始化连接大小 -->
+        <property name="initialSize" value="5" />
+        <!-- 连接池最大使用连接数量 -->
+        <property name="maxActive" value="20" />
+        <!-- 连接池最小空闲 -->
+        <property name="minIdle" value="0" />
+        <!-- 获取连接最大等待时间 -->
+        <property name="maxWait" value="60000" />
+
+        <!-- 逐出连接的检测时间间隔 -->
+        <property name="timeBetweenEvictionRunsMillis" value="3000" />
+        <!-- 最小逐出时间 -->
+        <property name="minEvictableIdleTimeMillis" value="300000" />
+        <!-- 测试有效用的SQL Query -->
+        <property name="validationQuery" value="SELECT 1" />
+        <!-- 连接空闲时测试是否有效 -->
+        <property name="testWhileIdle" value="true" />
+        <!-- 获取连接时测试是否有效 -->
+        <property name="testOnBorrow" value="false" />
+        <!-- 归还连接时是否测试有效 -->
+        <property name="testOnReturn" value="false" />
+
+        <property name="filters" value="stat" />
+
+        <property name="proxyFilters">
+            <list>
+                <ref bean="statFilter" />
+            </list>
+        </property>
+    </bean>
+    <!-- 多数据源适配时应指定对应文件  -->
+    <bean id="sqlSessionFactory"  class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="mainDataSource" />
+        <property name="typeAliasesPackage" value="com.pns.webservice.model" />
+        <property name="mapperLocations" value="classpath:**/*.xml" />
+    </bean>
+
+    <!-- Transaction manager for a single JDBC DataSource -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="mainDataSource" />
+    </bean>
+
+    <!-- 使用annotation定义事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <bean id="MapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.pns.webservice.mybatis.mainMapper" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- Enables the use of the @AspectJ style of Spring AOP
+    <aop:aspectj-autoproxy/>
+-->
+    <!-- ===============dm数据源的配置=============== -->
+    <!--<bean name="storageDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">-->
+        <!--<property name="DriverClassName" value="${jdbc.dm.driver}" />-->
+        <!--<property name="url" value="${jdbc.dm.url}" />-->
+        <!--<property name="username" value="${jdbc.dm.username}" />-->
+        <!--<property name="password" value="${jdbc.dm.password}" />-->
+        <!--&lt;!&ndash; 初始化连接大小 &ndash;&gt;-->
+        <!--<property name="initialSize" value="0" />-->
+        <!--&lt;!&ndash; 连接池最大使用连接数量 &ndash;&gt;-->
+        <!--<property name="maxActive" value="20" />-->
+        <!--&lt;!&ndash; 连接池最小空闲 &ndash;&gt;-->
+        <!--<property name="minIdle" value="0" />-->
+        <!--&lt;!&ndash; 获取连接最大等待时间 &ndash;&gt;-->
+        <!--<property name="maxWait" value="60000" />-->
+
+        <!--&lt;!&ndash; 逐出连接的检测时间间隔 &ndash;&gt;-->
+        <!--<property name="timeBetweenEvictionRunsMillis" value="3000" />-->
+        <!--&lt;!&ndash; 最小逐出时间 &ndash;&gt;-->
+        <!--<property name="minEvictableIdleTimeMillis" value="300000" />-->
+        <!--&lt;!&ndash; 测试有效用的SQL Query &ndash;&gt;-->
+        <!--<property name="validationQuery" value="SELECT 1" />-->
+        <!--&lt;!&ndash; 连接空闲时测试是否有效 &ndash;&gt;-->
+        <!--<property name="testWhileIdle" value="true" />-->
+        <!--&lt;!&ndash; 获取连接时测试是否有效 &ndash;&gt;-->
+        <!--<property name="testOnBorrow" value="false" />-->
+        <!--&lt;!&ndash; 归还连接时是否测试有效 &ndash;&gt;-->
+        <!--<property name="testOnReturn" value="false" />-->
+
+        <!--<property name="filters" value="stat" />-->
+
+        <!--<property name="proxyFilters">-->
+            <!--<list>-->
+                <!--<ref bean="statFilter" />-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--<bean id="sqlSessionFactory_storage" class="org.mybatis.spring.SqlSessionFactoryBean">-->
+        <!--<property name="dataSource" ref="storageDataSource" />-->
+        <!--<property name="typeAliasesPackage" value="com.pns.webservice.model" />-->
+        <!--<property name="mapperLocations" value="classpath:com/pns/webservice/mybatis/storageMapper/*.xml" />-->
+    <!--</bean>-->
+
+    <!--&lt;!&ndash; Transaction manager for a single JDBC DataSource &ndash;&gt;-->
+    <!--<bean id="transactionManager_storage" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+        <!--<property name="dataSource" ref="storageDataSource" />-->
+    <!--</bean>-->
+
+    <!--&lt;!&ndash; 使用annotation定义事务 &ndash;&gt;-->
+    <!--<tx:annotation-driven transaction-manager="transactionManager_storage" />-->
+
+    <!--<bean id="MapperScannerConfigurer_storage" class="org.mybatis.spring.mapper.MapperScannerConfigurer">-->
+        <!--<property name="basePackage" value="com.pns.webservice.mybatis.storageMapper" />-->
+        <!--<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory_storage"/>-->
+    <!--</bean>-->
+</beans>
